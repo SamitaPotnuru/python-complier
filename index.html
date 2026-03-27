@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudPy - Web IDE</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.12.0/brython.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.12.0/brython_stdlib.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #12141a;
+            color: #e2e8f0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Navigation Bar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1d24;
+            padding: 12px 24px;
+            border-bottom: 1px solid #2d3139;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4B8BBE;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .controls button:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        /* Main Split Container */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 61px);
+        }
+
+        /* Editor Section (Left) */
+        .editor-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2d3139;
+            background: #1e1e1e;
+        }
+
+        .panel-header {
+            background: #1a1d24;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            border-bottom: 1px solid #2d3139;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        /* Gutter for Line Numbers */
+        .gutter {
+            width: 45px;
+            background: #1a1d24;
+            color: #4a5568;
+            padding: 15px 0;
+            text-align: center;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            user-select: none;
+            border-right: 1px solid #2d3139;
+        }
+
+        textarea {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        /* Terminal Section (Right) */
+        .terminal-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0d1117;
+        }
+
+        .output-box {
+            flex: 1;
+            padding: 20px;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            color: #39ff14; /* Neon terminal green */
+            overflow-y: auto;
+        }
+
+        .clear-btn {
+            background: transparent;
+            border: 1px solid #4a5568;
+            color: #94a3b8;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .clear-btn:hover {
+            color: white;
+            border-color: white;
+        }
+    </style>
+</head>
+
+<body onload="brython()">
+
+    <header class="navbar">
+        <div class="logo">
+            <i class="fa-brands fa-python"></i> PyWorkspace
+        </div>
+        <div class="controls">
+            <button id="run-btn">
+                <i class="fa-solid fa-play"></i> Run Code
+            </button>
+        </div>
+    </header>
+
+    <main class="workspace">
+        
+        <div class="editor-section">
+            <div class="panel-header">
+                <i class="fa-solid fa-file-code"></i> main.py
+            </div>
+            <div class="editor-container">
+                <div class="gutter">
+                    1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10
+                </div>
+                <textarea id="python-code" spellcheck="false"># Try typing some Python code here!
+def greet(name):
+    return f"Hello, {name}! Welcome to PyWorkspace."
+
+for i in range(1, 4):
+    print(f"Loop {i}: " + greet("User"))
+</textarea>
+            </div>
+        </div>
+
+        <div class="terminal-section">
+            <div class="panel-header">
+                <i class="fa-solid fa-terminal"></i> Output
+                <button class="clear-btn" id="clear-btn">Clear</button>
+            </div>
+            <div id="output" class="output-box"></div>
+        </div>
+
+    </main>
+
+    <script type="text/python">
+        from browser import document, bind
+
+        # Function to clear output
+        @bind("#clear-btn", "click")
+        def clear_output(event):
+            document["output"].text = ""
+
+        # Function to run Python
+        @bind("#run-btn", "click")
+        def run_python(event):
+            document["output"].text = "" # Auto-clear on run
+            
+            code = document["python-code"].value
+            
+            import sys
+            class OutputRedirect:
+                def write(self, data):
+                    document["output"].text += data
+                def flush(self):
+                    pass
+
+            sys.stdout = OutputRedirect()
+            sys.stderr = OutputRedirect()
+
+            try:
+                exec(code)
+            except Exception as e:
+                print(f"🚨 Error: {e}")
+    </script>
+
+</body>
+</html>
